@@ -5,9 +5,11 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <cmath>
 
 const int windowWidth = 800;
 const int windowHeight = 800;
+bool renderMode = 1;
 
 struct ShaderProgramSource {
     std::string VertexSource;
@@ -68,6 +70,19 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, true);
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+        renderMode = !renderMode;
+
+    if (renderMode == 0) {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+    else {
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+}
+
 
 int main() {
     if (!glfwInit()) {
@@ -88,6 +103,7 @@ int main() {
         std::cerr << "Failed to init GLAD\n";
         return -1;
     }
+    glfwSetKeyCallback(window, key_callback);
 
     ShaderProgramSource source = ParseShader("../res/shaders/Basic.shader");
     unsigned int vertexShader = CompileShader(GL_VERTEX_SHADER, source.VertexSource);
@@ -100,16 +116,15 @@ int main() {
     glDeleteShader(fragmentShader);
 
     float vertices[] = {
-         0.5f,  0.5f, 0.0f, 
-         0.5f, -0.5f, 0.0f,  
-        -0.5f, -0.5f, 0.0f,
-        -0.5f,  0.5f, 0.0f 
+         0.5f,  0.5f, 0.0f,  1.f, 0.f, 0.f,
+         0.5f, -0.5f, 0.0f,  0.f, 1.f, 0.f,
+        -0.5f, -0.5f, 0.0f,  0.f, 0.f, 1.f,
+        -0.5f,  0.5f, 0.0f,  1.f, 1.f, 0.f
     };
     unsigned int indices[] = { 
-        0, 1, 3,
-        1, 2, 3
+        0, 1, 2,
+        0, 2, 3
     }; 
-
 
     unsigned int VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -123,10 +138,11 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);  
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -135,6 +151,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(program);
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
