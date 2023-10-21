@@ -19,12 +19,15 @@ add_library(glad deps/glad/glad.h deps/glad/glad.c)
 add_executable(
     opengl-app
     src/main.cpp
+    src/Shader.cpp
+    src/ShaderProgram.cpp
 )
 target_include_directories(
     opengl-app
     PRIVATE
     include
     deps
+    deps/glm
 )
 
 target_link_libraries(
